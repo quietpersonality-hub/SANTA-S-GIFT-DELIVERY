@@ -1,3 +1,4 @@
+
 // This file contains the main configuration for the game mechanics.
 // (EN) Этот файл содержит основные настройки игровой механики.
 export const GAME_CONFIG = {
@@ -15,9 +16,9 @@ export const GAME_CONFIG = {
         { distance: 450, speed: 7.5 },
     ],
     gapStages: [
-        { distance: 0, min: 200, max: 200 },
-        { distance: 350, min: 190, max: 190 },
-        { distance: 450, min: 180, max: 180 },
+        { distance: 0, min: 280, max: 320 },
+        { distance: 350, min: 260, max: 300 },
+        { distance: 450, min: 240, max: 280 },
     ],
     snowflakeStages: [
         { distance: 0, count: 50 },
@@ -36,8 +37,8 @@ export const GAME_CONFIG = {
     
     // Obstacles
     obstacleWidth: 120, 
-    obstacleMinHeight: 100, 
-    obstacleSpawnInterval: 420, // Horizontal distance between obstacles
+    obstacleMinHeight: 80, 
+    obstacleSpawnInterval: 480, // Horizontal distance between obstacles
     
     // Scoring
     crystalSize: 30,

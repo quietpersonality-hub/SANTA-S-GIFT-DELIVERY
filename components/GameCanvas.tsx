@@ -53,7 +53,9 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onVictory, onStatsU
         const rect = canvas.getBoundingClientRect();
         canvas.width = rect.width * dpr;
         canvas.height = rect.height * dpr;
-        ctx.scale(dpr, dpr);
+        if (canvas.getContext('2d')) {
+            canvas.getContext('2d')!.scale(dpr, dpr);
+        }
         engine.resize(rect.width, rect.height);
     }
     window.addEventListener('resize', handleResize);
@@ -64,8 +66,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ onGameOver, onVictory, onStatsU
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('resize', handleResize);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [onGameOver, onVictory, onStatsUpdate, setGameEngine, onPause]);
 
   useEffect(() => {
     if (isPaused) {

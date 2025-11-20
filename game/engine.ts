@@ -1,3 +1,4 @@
+
 import { Santa, Obstacle, Crystal, DroppedGift, Particle, BackgroundStar, BackgroundElement, Snowflake } from './entities';
 import { GAME_CONFIG } from './config';
 import { GameResult } from '../types';
@@ -50,6 +51,9 @@ export class GameEngine {
   private isPaused = false;
   private isGameOver = false;
   private animationFrameId: number = 0;
+  
+  // Aurora properties
+  private auroraOffset = 0;
   
   private boundHandleAction: () => void;
   private boundHandleKeyDown: (e: KeyboardEvent) => void;
@@ -115,10 +119,9 @@ export class GameEngine {
     // Find an obstacle that is currently a target and doesn't have a gift
     const targetObstacle = this.obstacles.find(o => o.isTarget && !o.hasGift);
 
-    if (targetObstacle) {
-        this.santa.dropGift();
-        this.droppedGifts.push(new DroppedGift(this.santa.x + GAME_CONFIG.santaWidth / 2, this.santa.y + GAME_CONFIG.santaHeight));
-    }
+    // Allow dropping even if not perfectly targeted, game logic handles success
+    this.santa.dropGift();
+    this.droppedGifts.push(new DroppedGift(this.santa.x + GAME_CONFIG.santaWidth / 2, this.santa.y + GAME_CONFIG.santaHeight));
   }
 
   private setupControls() {
@@ -182,21 +185,21 @@ export class GameEngine {
     const gapCenterY = newObstacle.topHeight + obstacleGap / 2;
     const crystalX = this.viewWidth + GAME_CONFIG.obstacleWidth / 2;
     const pattern = Math.random();
-    const crystalBuffer = 20;
+    const crystalBuffer = 30;
 
     if (pattern < 0.25) { 
         const offset = (obstacleGap / 2 - GAME_CONFIG.crystalSize - crystalBuffer) * (Math.random() > 0.5 ? 1 : -1);
         this.crystals.push(new Crystal(crystalX, gapCenterY + offset));
     } else if (pattern < 0.5) { 
-        const spacing = GAME_CONFIG.crystalSize * 2.5;
-        if (obstacleGap > spacing * 2 + GAME_CONFIG.crystalSize*2) {
+        const spacing = GAME_CONFIG.crystalSize * 3;
+        if (obstacleGap > spacing * 2) {
              this.crystals.push(new Crystal(crystalX, gapCenterY - spacing));
              this.crystals.push(new Crystal(crystalX, gapCenterY));
              this.crystals.push(new Crystal(crystalX, gapCenterY + spacing));
         }
     } else if (pattern < 0.75) { 
-        const spacingX = GAME_CONFIG.crystalSize * 2;
-        const spacingY = GAME_CONFIG.crystalSize * 1.5;
+        const spacingX = GAME_CONFIG.crystalSize * 2.5;
+        const spacingY = GAME_CONFIG.crystalSize * 2;
         const direction = Math.random() > 0.5 ? 1 : -1;
         this.crystals.push(new Crystal(crystalX - spacingX, gapCenterY - spacingY * direction));
         this.crystals.push(new Crystal(crystalX, gapCenterY));
@@ -205,12 +208,19 @@ export class GameEngine {
   }
   
   private updateDynamicElements(currentSpeed: number) {
+      // Snowflake count adjustment
+      const desiredSnowflakes = getInterpolatedValue(GAME_CONFIG.snowflakeStages, this.distanceTraveled, 'count');
+      if (this.snowflakes.length < desiredSnowflakes && Math.random() > 0.9) {
+          this.snowflakes.push(new Snowflake(this.viewWidth, this.viewHeight));
+      }
+
       this.snowflakes.forEach(s => s.update(currentSpeed, this.viewWidth, this.viewHeight));
   }
 
   private update() {
     const currentSpeed = this.getCurrentSpeed();
     this.distanceTraveled += currentSpeed / 60; 
+    this.auroraOffset += 0.02;
 
     this.santa.update(this.particles, currentSpeed / GAME_CONFIG.speedStages[0].speed);
     
@@ -251,13 +261,23 @@ export class GameEngine {
 
     // Check collision with chimneys
     for (const obstacle of this.obstacles) {
+      // Simple box collision for now, could be improved with polygon check
       if (
         this.santa.x < obstacle.x + GAME_CONFIG.obstacleWidth &&
         this.santa.x + GAME_CONFIG.santaWidth > obstacle.x &&
         this.santa.y + GAME_CONFIG.santaHeight > obstacle.topHeight + obstacle.gap
       ) {
-        this.handleGameOver();
-        return;
+         this.handleGameOver();
+         return;
+      }
+       // Ceiling pipe collision check
+      if (
+          this.santa.x < obstacle.x + GAME_CONFIG.obstacleWidth &&
+          this.santa.x + GAME_CONFIG.santaWidth > obstacle.x &&
+          this.santa.y < obstacle.topHeight
+      ) {
+          this.handleGameOver();
+          return;
       }
     }
     
@@ -267,7 +287,7 @@ export class GameEngine {
         const distX = (this.santa.x + GAME_CONFIG.santaWidth / 2) - crystal.x;
         const distY = (this.santa.y + GAME_CONFIG.santaHeight / 2) - crystal.y;
         const distance = Math.sqrt(distX * distX + distY * distY);
-        if (distance < GAME_CONFIG.crystalSize + (GAME_CONFIG.santaWidth / 3) ) {
+        if (distance < GAME_CONFIG.crystalSize + (GAME_CONFIG.santaWidth / 2) ) {
             crystal.isCollected = true;
             this.crystalsCollected++;
             for (let i = 0; i < 20; i++) {
@@ -282,8 +302,10 @@ export class GameEngine {
         for (const obstacle of this.obstacles) {
             if (obstacle.hasGift) continue;
             const chimneyTopY = obstacle.topHeight + obstacle.gap;
+            
+            // Check if gift falls into the top opening of the chimney
             if (gift.x > obstacle.x && gift.x < obstacle.x + GAME_CONFIG.obstacleWidth &&
-                gift.y > chimneyTopY && gift.y < chimneyTopY + 20) {
+                gift.y > chimneyTopY && gift.y < chimneyTopY + 40) {
                 
                 gift.isLanded = true;
                 obstacle.hasGift = true;
@@ -321,17 +343,69 @@ export class GameEngine {
         time: Date.now() - this.startTime
     });
   }
-
-  private draw() {
-    // Sky gradient
+  
+  private drawBackground() {
+    // Deep Space Gradient
     const sky = this.ctx.createLinearGradient(0, 0, 0, this.viewHeight);
-    sky.addColorStop(0, '#020111');
-    sky.addColorStop(0.7, '#19163a');
-    sky.addColorStop(1, '#3c386d');
+    sky.addColorStop(0, '#000015');
+    sky.addColorStop(0.4, '#10002b');
+    sky.addColorStop(1, '#240046');
     this.ctx.fillStyle = sky;
     this.ctx.fillRect(0, 0, this.viewWidth, this.viewHeight);
     
+    // Moon
+    this.ctx.save();
+    this.ctx.shadowBlur = 50;
+    this.ctx.shadowColor = '#fdfbf7';
+    this.ctx.fillStyle = '#fdfbf7';
+    const moonX = this.viewWidth * 0.8;
+    const moonY = this.viewHeight * 0.2;
+    const moonR = 40;
+    this.ctx.beginPath();
+    this.ctx.arc(moonX, moonY, moonR, 0, Math.PI*2);
+    this.ctx.fill();
+    // Craters
+    this.ctx.shadowBlur = 0;
+    this.ctx.fillStyle = 'rgba(200, 200, 200, 0.2)';
+    this.ctx.beginPath(); this.ctx.arc(moonX - 10, moonY + 5, 8, 0, Math.PI*2); this.ctx.fill();
+    this.ctx.beginPath(); this.ctx.arc(moonX + 15, moonY - 10, 5, 0, Math.PI*2); this.ctx.fill();
+    this.ctx.restore();
+    
+    // Aurora Borealis Effect
+    this.ctx.save();
+    this.ctx.globalCompositeOperation = 'screen';
+    const auroraGrad = this.ctx.createLinearGradient(0, 0, this.viewWidth, 0);
+    auroraGrad.addColorStop(0, 'rgba(0, 255, 128, 0)');
+    auroraGrad.addColorStop(0.2, 'rgba(0, 255, 128, 0.2)');
+    auroraGrad.addColorStop(0.5, 'rgba(0, 255, 255, 0.3)');
+    auroraGrad.addColorStop(0.8, 'rgba(138, 43, 226, 0.2)');
+    auroraGrad.addColorStop(1, 'rgba(138, 43, 226, 0)');
+
+    this.ctx.fillStyle = auroraGrad;
+    
+    this.ctx.beginPath();
+    this.ctx.moveTo(0, this.viewHeight * 0.4);
+    
+    // Wavy path
+    for(let x = 0; x <= this.viewWidth; x += 50) {
+        const y = Math.sin(x * 0.01 + this.auroraOffset) * 50 + Math.cos(x * 0.02 + this.auroraOffset * 1.5) * 30;
+        this.ctx.lineTo(x, this.viewHeight * 0.4 + y);
+    }
+    
+    this.ctx.lineTo(this.viewWidth, 0);
+    this.ctx.lineTo(0, 0);
+    this.ctx.closePath();
+    this.ctx.fill();
+    this.ctx.restore();
+
     this.backgroundStars.forEach(star => star.draw(this.ctx));
+    
+    // Distant Mountains/Skyline silhouette could go here if desired
+  }
+
+  private draw() {
+    this.drawBackground();
+    
     this.backgroundElements.forEach(b => b.draw(this.ctx));
     
     this.obstacles.forEach(obstacle => obstacle.draw(this.ctx));
@@ -339,6 +413,8 @@ export class GameEngine {
     this.droppedGifts.forEach(g => g.draw(this.ctx));
     this.santa.draw(this.ctx);
     this.particles.forEach(p => p.draw(this.ctx));
+    
+    // Snowflakes on top for depth
     this.snowflakes.forEach(s => s.draw(this.ctx));
 
     const darkness = getInterpolatedValue(GAME_CONFIG.darknessStages, this.distanceTraveled, 'alpha');
@@ -354,22 +430,24 @@ export class GameEngine {
         const finishLineScreenX = finishLineWorldX - cameraWorldX + this.santa.x;
         
         if (finishLineScreenX < this.viewWidth) {
+            // Finish line post
             const gradient = this.ctx.createLinearGradient(finishLineScreenX, 0, finishLineScreenX + 10, 0);
-            gradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
-            gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.7)');
-            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            gradient.addColorStop(0, 'rgba(255, 215, 0, 0)');
+            gradient.addColorStop(0.5, 'rgba(255, 215, 0, 0.8)');
+            gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
             this.ctx.fillStyle = gradient;
             this.ctx.fillRect(finishLineScreenX, 0, 10, this.viewHeight);
             
+            // Laser banner
             this.ctx.save();
-            this.ctx.translate(finishLineScreenX + 30, this.viewHeight / 2);
-            this.ctx.rotate(-Math.PI / 2);
-            this.ctx.font = 'bold 50px sans-serif';
-            this.ctx.textAlign = 'center';
+            this.ctx.shadowBlur = 20;
+            this.ctx.shadowColor = 'gold';
             this.ctx.fillStyle = 'white';
-            this.ctx.strokeStyle = 'black';
-            this.ctx.lineWidth = 3;
-            this.ctx.strokeText('ФИНИШ', 0, 0);
+            this.ctx.font = '900 60px sans-serif';
+            this.ctx.textAlign = 'center';
+            
+            this.ctx.translate(finishLineScreenX + 40, this.viewHeight / 2);
+            this.ctx.rotate(-Math.PI / 2);
             this.ctx.fillText('ФИНИШ', 0, 0);
             this.ctx.restore();
         }

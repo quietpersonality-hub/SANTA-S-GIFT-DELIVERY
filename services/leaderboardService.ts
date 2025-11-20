@@ -1,7 +1,7 @@
 
 import { LeaderboardEntry } from '../types';
 
-const LEADERBOARD_KEY = 'santasGiftDeliveryLeaderboard_v2';
+const LEADERBOARD_KEY = 'dedMorozGiftDeliveryLeaderboard_v2';
 const MAX_SCORES = 5;
 
 export const getScores = (): LeaderboardEntry[] => {

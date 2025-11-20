@@ -21,24 +21,28 @@ const GameScreen: React.FC<GameScreenProps> = ({ initialState, onGameOver, onVic
     setStats({ distance, gifts, crystals, progress });
   }, []);
 
-  const handlePause = () => {
+  const handlePause = useCallback(() => {
     gameEngineRef.current?.pause();
     setGameState(GameState.Paused);
-  };
+  }, [setGameState]);
 
-  const handleResume = () => {
+  const handleResume = useCallback(() => {
     gameEngineRef.current?.resume();
     setGameState(GameState.Playing);
-  };
+  }, [setGameState]);
   
-  const handleRestart = () => {
+  const handleRestart = useCallback(() => {
      if(gameEngineRef.current){
          gameEngineRef.current.destroy();
          // A bit of a hack to force a re-render and new engine instance
          setGameState(GameState.MainMenu); 
          setTimeout(()=> setGameState(GameState.Playing), 10);
      }
-  }
+  }, [setGameState]);
+
+  const setGameEngine = useCallback((engine: GameEngine) => {
+    gameEngineRef.current = engine;
+  }, []);
 
   const handleGiftDrop = useCallback(() => {
     gameEngineRef.current?.triggerGiftDrop();
@@ -50,7 +54,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ initialState, onGameOver, onVic
         onGameOver={onGameOver}
         onVictory={onVictory}
         onStatsUpdate={handleStatsUpdate}
-        setGameEngine={(engine) => (gameEngineRef.current = engine)}
+        setGameEngine={setGameEngine}
         isPaused={initialState === GameState.Paused}
         onPause={handlePause}
       />
