@@ -103,16 +103,6 @@ export class Santa {
 
     // --- SANTA ---
     
-    // Scarf (animated)
-    const scarfOffset = Math.sin(this.frame * 0.2) * 5;
-    ctx.beginPath();
-    ctx.moveTo(this.x + 35, this.y + 25);
-    ctx.bezierCurveTo(this.x - 10, this.y + 25 + scarfOffset, this.x - 20, this.y + 10 - scarfOffset, this.x - 40, this.y + 20);
-    ctx.lineWidth = 8;
-    ctx.strokeStyle = '#f1c40f'; // Gold scarf
-    ctx.lineCap = 'round';
-    ctx.stroke();
-
     // Coat (Body)
     const coatGrad = ctx.createRadialGradient(this.x + 30, this.y + 30, 5, this.x + 30, this.y + 30, 40);
     coatGrad.addColorStop(0, '#ff4d4d');
@@ -143,6 +133,31 @@ export class Santa {
     ctx.quadraticCurveTo(this.x + 25, this.y + 35, this.x + 30, this.y + 20);
     ctx.fill();
 
+    // VR Glasses (Headset)
+    ctx.fillStyle = '#212121'; // Dark grey headset body
+    ctx.beginPath();
+    // Positioned over eyes area
+    ctx.roundRect(this.x + 38, this.y + 14, 18, 10, 3);
+    ctx.fill();
+
+    // VR Neon Visor
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = '#00ffff';
+    ctx.fillStyle = '#00ffff';
+    ctx.beginPath();
+    // Glowing strip
+    ctx.roundRect(this.x + 42, this.y + 16, 14, 6, 1); 
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // VR Strap
+    ctx.strokeStyle = '#212121';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(this.x + 38, this.y + 18);
+    ctx.lineTo(this.x + 28, this.y + 20); // Going behind head
+    ctx.stroke();
+
     // Hat
     ctx.fillStyle = '#c0392b';
     ctx.beginPath();
@@ -154,7 +169,9 @@ export class Santa {
     // Hat Pom-pom
     ctx.fillStyle = 'white';
     ctx.beginPath();
-    ctx.arc(this.x + 22, this.y + 26 + scarfOffset/2, 5, 0, Math.PI * 2);
+    // Calculate sway for pom-pom
+    const sway = Math.sin(this.frame * 0.2) * 5;
+    ctx.arc(this.x + 22, this.y + 26 + sway/2, 5, 0, Math.PI * 2);
     ctx.fill();
 
     // Hat Trim
@@ -163,12 +180,6 @@ export class Santa {
     ctx.roundRect(this.x + 28, this.y + 12, 26, 8, 4);
     ctx.fill();
     
-    // Eye (Simple dot)
-    ctx.fillStyle = '#000';
-    ctx.beginPath();
-    ctx.arc(this.x + 44, this.y + 18, 1.5, 0, Math.PI * 2);
-    ctx.fill();
-
     ctx.restore();
   }
 }
@@ -429,7 +440,7 @@ export class Crystal {
 export class DroppedGift {
     x: number;
     y: number;
-    vy: number = -2;
+    vy: number = 5;
     angle: number = 0;
     isLanded: boolean = false;
     
@@ -440,9 +451,9 @@ export class DroppedGift {
     
     update() {
         if (this.isLanded) return;
-        this.vy += GAME_CONFIG.gravity * 0.3; // Slower gravity for gifts
+        this.vy += GAME_CONFIG.gravity * 0.8; // Slower gravity for gifts
         this.y += this.vy;
-        this.angle += 0.05;
+        this.angle += 0.1;
     }
     
     draw(ctx: CanvasRenderingContext2D) {

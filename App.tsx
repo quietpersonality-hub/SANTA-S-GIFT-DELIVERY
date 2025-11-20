@@ -81,7 +81,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="w-screen h-screen bg-gray-900 text-white font-sans select-none overflow-hidden">
+    <div className="w-screen h-[100dvh] bg-gray-900 text-white font-sans select-none overflow-hidden relative touch-none">
       {renderContent()}
     </div>
   );

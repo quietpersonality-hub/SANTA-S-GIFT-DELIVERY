@@ -57,6 +57,7 @@ export class GameEngine {
   
   private boundHandleAction: () => void;
   private boundHandleKeyDown: (e: KeyboardEvent) => void;
+  private boundHandleTouch: (e: TouchEvent) => void;
 
 
   constructor(canvas: HTMLCanvasElement, callbacks: GameCallbacks) {
@@ -76,6 +77,10 @@ export class GameEngine {
     this.initBackground();
     
     this.boundHandleAction = this.handleAction.bind(this);
+    this.boundHandleTouch = (e) => {
+        if(e.cancelable) e.preventDefault(); // Stop scrolling
+        this.handleAction();
+    };
     this.boundHandleKeyDown = (e) => {
         if (e.code === 'Space') {
             e.preventDefault();
@@ -127,10 +132,7 @@ export class GameEngine {
   private setupControls() {
     window.addEventListener('keydown', this.boundHandleKeyDown);
     this.canvas.addEventListener('mousedown', this.boundHandleAction);
-    this.canvas.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        this.handleAction();
-    });
+    this.canvas.addEventListener('touchstart', this.boundHandleTouch, { passive: false });
   }
 
   public start() {
@@ -156,6 +158,7 @@ export class GameEngine {
     cancelAnimationFrame(this.animationFrameId);
     window.removeEventListener('keydown', this.boundHandleKeyDown);
     this.canvas.removeEventListener('mousedown', this.boundHandleAction);
+    this.canvas.removeEventListener('touchstart', this.boundHandleTouch);
   }
 
   private gameLoop = () => {

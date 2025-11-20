@@ -7,26 +7,25 @@ interface RulesScreenProps {
 }
 
 const RuleItem: React.FC<{ icon: string; text: string }> = ({ icon, text }) => (
-    <div className="flex items-center space-x-6 p-5 bg-white/20 rounded-lg shadow-md">
-        <span className="text-5xl">{icon}</span>
-        <p className="text-2xl">{text}</p>
+    <div className="flex items-center space-x-4 md:space-x-6 p-3 md:p-5 bg-white/10 rounded-lg shadow-md backdrop-blur-sm border border-white/5">
+        <span className="text-3xl md:text-5xl shrink-0">{icon}</span>
+        <p className="text-lg md:text-2xl text-gray-100 leading-tight">{text}</p>
     </div>
 );
 
 const RulesScreen: React.FC<RulesScreenProps> = ({ onBack }) => {
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center p-8 bg-gradient-to-b from-gray-800 to-black">
-      <h1 className="text-6xl font-bold text-white mb-12 drop-shadow-lg">Как играть?</h1>
-      <div className="space-y-6 max-w-3xl w-full mb-12">
-        <RuleItem icon="🎅" text="Помогите Деду Морозу в его новогоднем путешествии!" />
-        <RuleItem icon="👆" text="Нажимайте, чтобы Дед Мороз летел вверх." />
-        <RuleItem icon="🎁" text="Нажимайте Ctrl (или 🎁), чтобы сбросить подарок в трубу." />
-        <RuleItem icon="💎" text="Собирайте ледяные кристаллы для бонусных очков." />
-        <RuleItem icon="💥" text="Избегайте столкновений с трубами." />
-        <RuleItem icon="🏁" text="Доберитесь до финиша за 500 метров!" />
+    <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-gradient-to-b from-gray-800 to-black overflow-y-auto">
+      <h1 className="text-4xl md:text-6xl font-bold text-white mb-8 drop-shadow-lg mt-4">Правила</h1>
+      <div className="space-y-3 md:space-y-6 max-w-3xl w-full mb-8">
+        <RuleItem icon="🎅" text="Помоги Деду Морозу долететь до финиша!" />
+        <RuleItem icon="👆" text="Нажимай на экран, чтобы лететь вверх." />
+        <RuleItem icon="🎁" text="Жми кнопку подарка над трубами." />
+        <RuleItem icon="💎" text="Собирай кристаллы для бонусов." />
+        <RuleItem icon="💥" text="Не врезайся в трубы и землю!" />
       </div>
-      <div className="w-96 max-w-full px-4">
-        <Button onClick={onBack}>Понятно</Button>
+      <div className="w-full max-w-xs px-4 pb-8">
+        <Button onClick={onBack}>Всё понятно!</Button>
       </div>
     </div>
   );
