@@ -6,12 +6,59 @@ import RulesScreen from './components/RulesScreen';
 import Leaderboard from './components/Leaderboard';
 import GameScreen from './components/GameScreen';
 import EndScreen from './components/EndScreen';
+import { audioManager } from './game/audio';
 
 const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(GameState.MainMenu);
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
 
-  const handleStartGame = () => setGameState(GameState.Playing);
+  // Initialize audio on first interaction
+  useEffect(() => {
+    const initAudio = () => {
+      audioManager.init();
+      window.removeEventListener('click', initAudio);
+      window.removeEventListener('keydown', initAudio);
+      window.removeEventListener('touchstart', initAudio);
+    };
+    window.addEventListener('click', initAudio);
+    window.addEventListener('keydown', initAudio);
+    window.addEventListener('touchstart', initAudio);
+    return () => {
+      window.removeEventListener('click', initAudio);
+      window.removeEventListener('keydown', initAudio);
+      window.removeEventListener('touchstart', initAudio);
+    };
+  }, []);
+
+  // Manage Background Music
+  useEffect(() => {
+    switch (gameState) {
+      case GameState.MainMenu:
+      case GameState.Rules:
+      case GameState.Leaderboard:
+        audioManager.playMenuMusic();
+        break;
+      case GameState.Playing:
+        audioManager.playGameMusic();
+        break;
+      case GameState.Paused:
+        // Keep music playing or lower volume? Let's keep it for now.
+        break;
+      case GameState.GameOver:
+        audioManager.stopMusic();
+        audioManager.playCrash();
+        break;
+      case GameState.Victory:
+        audioManager.stopMusic();
+        audioManager.playWin();
+        break;
+    }
+  }, [gameState]);
+
+  const handleStartGame = () => {
+      audioManager.init(); // Ensure initialized
+      setGameState(GameState.Playing);
+  };
   const handleShowRules = () => setGameState(GameState.Rules);
   const handleShowLeaderboard = () => setGameState(GameState.Leaderboard);
   const handleBackToMenu = () => {

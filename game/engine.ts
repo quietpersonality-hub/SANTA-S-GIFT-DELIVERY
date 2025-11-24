@@ -2,6 +2,7 @@
 import { Santa, Obstacle, Crystal, DroppedGift, Particle, BackgroundStar, BackgroundElement, Snowflake } from './entities';
 import { GAME_CONFIG } from './config';
 import { GameResult } from '../types';
+import { audioManager } from './audio';
 
 interface GameCallbacks {
   onGameOver: (result: GameResult) => void;
@@ -116,6 +117,7 @@ export class GameEngine {
   private handleAction() {
     if (!this.isRunning || this.isPaused || this.isGameOver) return;
     this.santa.flap();
+    audioManager.playJump();
   };
 
   public triggerGiftDrop() {
@@ -126,6 +128,7 @@ export class GameEngine {
 
     // Allow dropping even if not perfectly targeted, game logic handles success
     this.santa.dropGift();
+    audioManager.playDrop();
     this.droppedGifts.push(new DroppedGift(this.santa.x + GAME_CONFIG.santaWidth / 2, this.santa.y + GAME_CONFIG.santaHeight));
   }
 
@@ -293,6 +296,7 @@ export class GameEngine {
         if (distance < GAME_CONFIG.crystalSize + (GAME_CONFIG.santaWidth / 2) ) {
             crystal.isCollected = true;
             this.crystalsCollected++;
+            audioManager.playCollect();
             for (let i = 0; i < 20; i++) {
                 this.particles.push(new Particle(crystal.x, crystal.y, 'crystal_shatter'));
             }
@@ -313,6 +317,7 @@ export class GameEngine {
                 gift.isLanded = true;
                 obstacle.hasGift = true;
                 this.giftsDelivered++;
+                audioManager.playSuccess();
                 for (let i=0; i < 40; i++) {
                     this.particles.push(new Particle(gift.x, chimneyTopY, 'gift_success'));
                 }
